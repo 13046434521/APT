@@ -2,9 +2,11 @@ package com.jtl.apt_compiler;
 
 import com.google.auto.service.AutoService;
 import com.jtl.apt_annotation.ARouter;
+import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,12 +65,13 @@ public class ARouterProcessor extends AbstractProcessor {
 
         // aRouterSet 中每有一个被ARouter修饰的，就会成为一个element，被添加进set集合中
         for (Element element : set) {
+            String packageName = elementUtils.getPackageOf(element).getQualifiedName().toString();
             // 方法
             MethodSpec methodSpec = MethodSpec.methodBuilder("main") // 方法名
                     .returns(void.class) // 返回类型
                     .addModifiers(PUBLIC, STATIC) // 方法的权限及关键字
                     .addParameter(String[].class, "args") // 参数类型与名称
-                    .addStatement("$S,") // 方法体
+                    .addStatement("$T.out.println($L)",System.class,"args") // 方法体
                     .build(); // build
 
             // 类
@@ -77,8 +80,12 @@ public class ARouterProcessor extends AbstractProcessor {
                     .addMethod(methodSpec)
                     .build();
             // 包
-//            JavaFile javaFile = JavaFile.builder(element.getSimpleName().toString()).build();
-
+            JavaFile javaFile = JavaFile.builder(packageName,typeSpec).build();
+            try {
+                javaFile.writeTo(filer);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             messager.printMessage(Diagnostic.Kind.NOTE, element.getSimpleName().toString());
         }
